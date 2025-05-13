@@ -42,22 +42,23 @@ jobs:
       - name: Create PR from ${{ inputs.from-branch }} to ${{ inputs.to-branch }}
         run: |
           # Check if an open PR from 'from-branch' to 'to-branch' exists
-          existing_pr=$(gh pr list --base ${{ inputs.to-branch }} --head ${{ inputs.from-branch }} --state open --json number --jq '.[0].number')
+          existing_pr=$(gh pr list --base "${{ inputs.to-branch }}" --head "${{ inputs.from-branch }}" --state open --json number --jq '.[0].number')
 
           if [ -z "$existing_pr" ]; then
             echo "No existing PR found. Creating a new PR..."
-            
-            create_pr_cmd="gh pr create --base ${{ inputs.to-branch }} --head ${{ inputs.from-branch }} --title '${{ inputs.pr-title }}' --body '${{ inputs.pr-body }}'"
+
+            # Prepare arguments safely
+            pr_args=(--base "${{ inputs.to-branch }}" --head "${{ inputs.from-branch }}" --title "${{ inputs.pr-title }}" --body "${{ inputs.pr-body }}")
 
             if ${{ inputs.draft }}; then
-              create_pr_cmd="$create_pr_cmd --draft"
+              pr_args+=(--draft)
               echo "Creating PR in draft mode."
             else
               echo "Creating PR in ready-for-review mode."
             fi
 
-            echo "Running: $create_pr_cmd"
-            eval $create_pr_cmd
+            echo "Running: gh pr create ${pr_args[*]}"
+            gh pr create "${pr_args[@]}"
           else
             echo "PR already exists: #$existing_pr. Skipping creation."
           fi
