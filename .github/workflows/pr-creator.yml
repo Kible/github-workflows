@@ -26,6 +26,10 @@ on:
         required: false
         type: boolean
         default: true
+    secrets:
+      GH_PAT:
+        required: true
+        description: "Personal Access Token used to create PRs"
 
 permissions:
   contents: read
