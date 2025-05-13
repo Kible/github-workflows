@@ -63,4 +63,4 @@ jobs:
             echo "PR already exists: #$existing_pr. Skipping creation."
           fi
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
