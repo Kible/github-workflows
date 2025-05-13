@@ -1,0 +1,65 @@
+name: "Reusable PR Workflow"
+
+on:
+  workflow_call:
+    inputs:
+      from-branch:
+        description: "Source branch (head) for the PR"
+        required: true
+        type: string
+      to-branch:
+        description: "Target branch (base) for the PR"
+        required: true
+        type: string
+      pr-title:
+        description: "Title of the Pull Request"
+        required: false
+        type: string
+        default: "🔖 Merge from-branch → to-branch"
+      pr-body:
+        description: "Body content for the Pull Request"
+        required: false
+        type: string
+        default: "This PR was auto-generated."
+      draft:
+        description: "Create PR as draft (true/false)"
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Create PR from ${{ inputs.from-branch }} to ${{ inputs.to-branch }}
+        run: |
+          # Check if an open PR from 'from-branch' to 'to-branch' exists
+          existing_pr=$(gh pr list --base ${{ inputs.to-branch }} --head ${{ inputs.from-branch }} --state open --json number --jq '.[0].number')
+
+          if [ -z "$existing_pr" ]; then
+            echo "No existing PR found. Creating a new PR..."
+            
+            create_pr_cmd="gh pr create --base ${{ inputs.to-branch }} --head ${{ inputs.from-branch }} --title '${{ inputs.pr-title }}' --body '${{ inputs.pr-body }}'"
+
+            if ${{ inputs.draft }}; then
+              create_pr_cmd="$create_pr_cmd --draft"
+              echo "Creating PR in draft mode."
+            else
+              echo "Creating PR in ready-for-review mode."
+            fi
+
+            echo "Running: $create_pr_cmd"
+            eval $create_pr_cmd
+          else
+            echo "PR already exists: #$existing_pr. Skipping creation."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
